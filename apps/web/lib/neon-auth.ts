@@ -18,7 +18,7 @@ const envSchema = z.object({
 export function buildNeonProvider<TProfile extends Record<string, unknown>>():
   | OAuthConfig<TProfile>
   | null {
-  const parsed = envSchema.safeParse(process.env as EnvShape);
+  const parsed = envSchema.safeParse(process.env);
 
   if (!parsed.success) {
     console.warn("[auth] Neon Auth configuration incomplete", parsed.error.flatten().fieldErrors);
@@ -45,7 +45,7 @@ export function buildNeonProvider<TProfile extends Record<string, unknown>>():
       }
     },
     checks: ["pkce", "state"],
-    profile(profile: Record<string, unknown>) {
+    profile: (profile: any) => {
       const id =
         profile.sub ??
         profile.user_id ??
@@ -57,5 +57,5 @@ export function buildNeonProvider<TProfile extends Record<string, unknown>>():
         email: profile.email as string | undefined
       } as unknown as TProfile;
     }
-  } satisfies OAuthConfig<TProfile>;
+  } as unknown as OAuthConfig<TProfile>;
 }

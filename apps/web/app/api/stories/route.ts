@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import type { StoryStatus } from "@prisma/client";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -96,13 +97,13 @@ export async function POST(request: Request) {
   return NextResponse.json({ story: serializeStory(story as StoryWithTree) }, { status: 201 });
 }
 
-async function nextPosition(ownerId: string, status: string) {
+async function nextPosition(ownerId: string, status: StoryStatus | null | undefined) {
   const maxPosition = await prisma.story.aggregate({
-    where: { ownerId, status },
+    where: { ownerId, status: status || undefined },
     _max: {
       position: true
     }
   });
 
-  return (maxPosition._max.position ?? 0) + 1;
+  return (maxPosition._max?.position ?? 0) + 1;
 }
