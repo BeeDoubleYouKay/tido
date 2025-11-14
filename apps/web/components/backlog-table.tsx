@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Fragment, useEffect } from "react";
+import { useState, useMemo, Fragment, useEffect, useRef } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -235,7 +235,8 @@ function SortableRow({
   onRowClick,
   onAddChild,
   isExpanded,
-  onToggleExpand
+  onToggleExpand,
+  columnWidths
 }: {
   story: StoryRow;
   users: User[];
@@ -244,6 +245,7 @@ function SortableRow({
   onAddChild: (parentId: string) => void;
   isExpanded: boolean;
   onToggleExpand: (storyId: string) => void;
+  columnWidths: { title: number; status: number; assignees: number; effort: number; actions: number };
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: story.id
@@ -266,15 +268,15 @@ function SortableRow({
       )}
       onClick={() => onRowClick(story)}
     >
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-2">
+      <td className="px-4 py-3" style={{ width: `${columnWidths.title}px`, maxWidth: `${columnWidths.title}px` }}>
+        <div className="flex items-center gap-2 overflow-hidden">
           {hasChildren ? (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleExpand(story.id);
               }}
-              className="text-gray-500 hover:text-gray-700 transition-colors"
+              className="text-gray-500 hover:text-gray-700 transition-colors flex-shrink-0"
             >
               {isExpanded ? (
                 <ChevronDown className="w-4 h-4" />
@@ -283,13 +285,13 @@ function SortableRow({
               )}
             </button>
           ) : (
-            <div className="w-4 h-4" />
+            <div className="w-4 h-4 flex-shrink-0" />
           )}
           <button
             {...attributes}
             {...listeners}
             onClick={(e) => e.stopPropagation()}
-            className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600"
+            className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 flex-shrink-0"
           >
             <GripVertical className="w-4 h-4" />
           </button>
@@ -298,7 +300,7 @@ function SortableRow({
               e.stopPropagation();
               onAddChild(story.id);
             }}
-            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded p-1 transition-colors"
+            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded p-1 transition-colors flex-shrink-0"
             title="Add child story"
           >
             <Plus className="w-4 h-4" />
@@ -308,32 +310,39 @@ function SortableRow({
             value={story.title}
             onChange={(e) => onUpdate(story.id, { title: e.target.value })}
             onClick={(e) => e.stopPropagation()}
-            className="flex-1 px-2 py-1 text-sm border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+            style={{ width: `${Math.max(story.title.length * 8 + 20, 100)}px` }}
+            className="px-2 py-1 text-sm border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded truncate flex-shrink min-w-0"
           />
           {hasChildren && (
-            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded flex-shrink-0">
               {story.children.length}
             </span>
           )}
         </div>
       </td>
-      <td className="px-4 py-3 text-center">
-        <StatusSelect
-          value={story.status}
-          onChange={(status) => onUpdate(story.id, { status })}
-        />
+      <td className="px-4 py-3 text-center overflow-hidden" style={{ width: `${columnWidths.status}px`, maxWidth: `${columnWidths.status}px` }}>
+        <div className="flex justify-center">
+          <StatusSelect
+            value={story.status}
+            onChange={(status) => onUpdate(story.id, { status })}
+          />
+        </div>
       </td>
-      <td className="px-4 py-3 text-center">
-        <AssigneeSelect
-          value={story.assignees}
-          users={users}
-          onChange={(assignees) => onUpdate(story.id, { assignees })}
-        />
+      <td className="px-4 py-3 text-center overflow-hidden" style={{ width: `${columnWidths.assignees}px`, maxWidth: `${columnWidths.assignees}px` }}>
+        <div className="flex justify-center">
+          <AssigneeSelect
+            value={story.assignees}
+            users={users}
+            onChange={(assignees) => onUpdate(story.id, { assignees })}
+          />
+        </div>
       </td>
-      <td className="px-4 py-3 text-center">
-        <EffortInput value={story.effort} onChange={(effort) => onUpdate(story.id, { effort })} />
+      <td className="px-4 py-3 text-center overflow-hidden" style={{ width: `${columnWidths.effort}px`, maxWidth: `${columnWidths.effort}px` }}>
+        <div className="flex justify-center">
+          <EffortInput value={story.effort} onChange={(effort) => onUpdate(story.id, { effort })} />
+        </div>
       </td>
-      <td className="px-4 py-3 text-center">
+      <td className="px-4 py-3 text-center" style={{ width: `${columnWidths.actions}px`, maxWidth: `${columnWidths.actions}px` }}>
         <button className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600">
           <MoreHorizontal className="w-4 h-4" />
         </button>
@@ -346,47 +355,56 @@ function ChildStoryRow({
   story,
   users,
   onUpdate,
-  onRowClick
+  onRowClick,
+  columnWidths
 }: {
   story: StoryRow;
   users: User[];
   onUpdate: (id: string, updates: Partial<StoryRow>) => void;
   onRowClick: (story: StoryRow) => void;
+  columnWidths: { title: number; status: number; assignees: number; effort: number; actions: number };
 }) {
   return (
     <tr
       className="border-b border-gray-100 hover:bg-blue-50/30 group cursor-pointer bg-blue-50/10"
       onClick={() => onRowClick(story)}
     >
-      <td className="px-4 py-2">
-        <div className="flex items-center gap-2 pl-12">
-          <div className="w-4 h-4 border-l-2 border-b-2 border-gray-300 -mt-2 mr-1" />
+      <td className="px-4 py-2 overflow-hidden" style={{ width: `${columnWidths.title}px`, maxWidth: `${columnWidths.title}px` }}>
+        <div className="flex items-center gap-2 pl-12 overflow-hidden">
+          <div className="w-4 h-4 border-l-2 border-b-2 border-gray-300 -mt-2 mr-1 flex-shrink-0" />
           <input
             type="text"
             value={story.title}
             onChange={(e) => onUpdate(story.id, { title: e.target.value })}
             onClick={(e) => e.stopPropagation()}
-            className="flex-1 px-2 py-1 text-sm border-0 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+            style={{ width: `${Math.max(story.title.length * 8 + 20, 100)}px` }}
+            className="px-2 py-1 text-sm border-0 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded truncate min-w-0"
           />
         </div>
       </td>
-      <td className="px-4 py-2 text-center">
-        <StatusSelect
-          value={story.status}
-          onChange={(status) => onUpdate(story.id, { status })}
-        />
+      <td className="px-4 py-2 text-center overflow-hidden" style={{ width: `${columnWidths.status}px`, maxWidth: `${columnWidths.status}px` }}>
+        <div className="flex justify-center">
+          <StatusSelect
+            value={story.status}
+            onChange={(status) => onUpdate(story.id, { status })}
+          />
+        </div>
       </td>
-      <td className="px-4 py-2 text-center">
-        <AssigneeSelect
-          value={story.assignees}
-          users={users}
-          onChange={(assignees) => onUpdate(story.id, { assignees })}
-        />
+      <td className="px-4 py-2 text-center overflow-hidden" style={{ width: `${columnWidths.assignees}px`, maxWidth: `${columnWidths.assignees}px` }}>
+        <div className="flex justify-center">
+          <AssigneeSelect
+            value={story.assignees}
+            users={users}
+            onChange={(assignees) => onUpdate(story.id, { assignees })}
+          />
+        </div>
       </td>
-      <td className="px-4 py-2 text-center">
-        <EffortInput value={story.effort} onChange={(effort) => onUpdate(story.id, { effort })} />
+      <td className="px-4 py-2 text-center overflow-hidden" style={{ width: `${columnWidths.effort}px`, maxWidth: `${columnWidths.effort}px` }}>
+        <div className="flex justify-center">
+          <EffortInput value={story.effort} onChange={(effort) => onUpdate(story.id, { effort })} />
+        </div>
       </td>
-      <td className="px-4 py-2 text-center">
+      <td className="px-4 py-2 text-center" style={{ width: `${columnWidths.actions}px`, maxWidth: `${columnWidths.actions}px` }}>
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -398,6 +416,60 @@ function ChildStoryRow({
         </button>
       </td>
     </tr>
+  );
+}
+
+function ResizableColumnHeader({
+  label,
+  width,
+  onResize,
+  align = "left"
+}: {
+  label: string;
+  width: number;
+  onResize: (delta: number) => void;
+  align?: "left" | "center";
+}) {
+  const [isResizing, setIsResizing] = useState(false);
+  const startXRef = useRef(0);
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const delta = e.clientX - startXRef.current;
+      startXRef.current = e.clientX;
+      onResize(delta);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizing, onResize]);
+
+  return (
+    <th
+      className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider relative group"
+      style={{ width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px`, textAlign: align }}
+    >
+      <div className="truncate">{label}</div>
+      <div
+        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 group-hover:bg-blue-300"
+        onMouseDown={(e) => {
+          e.preventDefault();
+          startXRef.current = e.clientX;
+          setIsResizing(true);
+        }}
+      />
+    </th>
   );
 }
 
@@ -450,6 +522,14 @@ export function BacklogTable({ initialStories, users }: BacklogTableProps) {
     initialStories.map(mapStoryToRow)
   );
 
+  const [columnWidths, setColumnWidths] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("backlog-columnWidths");
+      return saved ? JSON.parse(saved) : { title: 400, status: 150, assignees: 200, effort: 100, actions: 60 };
+    }
+    return { title: 400, status: 150, assignees: 200, effort: 100, actions: 60 };
+  });
+
   const [groupBy, setGroupBy] = useState<GroupBy>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("backlog-groupBy");
@@ -480,6 +560,17 @@ export function BacklogTable({ initialStories, users }: BacklogTableProps) {
   useEffect(() => {
     localStorage.setItem("backlog-sortBy", sortBy);
   }, [sortBy]);
+
+  useEffect(() => {
+    localStorage.setItem("backlog-columnWidths", JSON.stringify(columnWidths));
+  }, [columnWidths]);
+
+  const handleColumnResize = (column: keyof typeof columnWidths, delta: number) => {
+    setColumnWidths((prev: typeof columnWidths) => ({
+      ...prev,
+      [column]: Math.max(50, prev[column] + delta)
+    }));
+  };
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -769,22 +860,37 @@ export function BacklogTable({ initialStories, users }: BacklogTableProps) {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <table className="w-full">
+          <table className="w-full table-fixed">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Title
-                </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Assignees
-                </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Effort
-                </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-12">
+                <ResizableColumnHeader
+                  label="Title"
+                  width={columnWidths.title}
+                  onResize={(delta) => handleColumnResize("title", delta)}
+                  align="left"
+                />
+                <ResizableColumnHeader
+                  label="Status"
+                  width={columnWidths.status}
+                  onResize={(delta) => handleColumnResize("status", delta)}
+                  align="center"
+                />
+                <ResizableColumnHeader
+                  label="Assignees"
+                  width={columnWidths.assignees}
+                  onResize={(delta) => handleColumnResize("assignees", delta)}
+                  align="center"
+                />
+                <ResizableColumnHeader
+                  label="Effort"
+                  width={columnWidths.effort}
+                  onResize={(delta) => handleColumnResize("effort", delta)}
+                  align="center"
+                />
+                <th
+                  className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                  style={{ width: `${columnWidths.actions}px`, minWidth: `${columnWidths.actions}px` }}
+                >
                 </th>
               </tr>
             </thead>
@@ -828,6 +934,7 @@ export function BacklogTable({ initialStories, users }: BacklogTableProps) {
                               onAddChild={handleAddChildInline}
                               isExpanded={isExpanded}
                               onToggleExpand={handleToggleExpand}
+                              columnWidths={columnWidths}
                             />
                             {addingChildForStoryId === story.id && (
                               <InlineChildStoryForm
@@ -845,6 +952,7 @@ export function BacklogTable({ initialStories, users }: BacklogTableProps) {
                                   users={users}
                                   onUpdate={handleUpdate}
                                   onRowClick={handleRowClick}
+                                  columnWidths={columnWidths}
                                 />
                               ))}
                           </Fragment>
