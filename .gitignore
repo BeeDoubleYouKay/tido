@@ -1,0 +1,12 @@
+node_modules/
+.pnpm-debug.log
+.env
+.env.local
+.env.production
+.env.development
+.next/
+dist/
+build/
+.turbo/
+.prisma/
+.DS_Store

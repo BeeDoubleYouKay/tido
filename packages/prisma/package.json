@@ -1,0 +1,26 @@
+{
+  "name": "@totracker/prisma",
+  "version": "0.1.0",
+  "private": true,
+  "prisma": {
+    "schema": "../../prisma/schema.prisma"
+  },
+  "scripts": {
+    "generate": "prisma generate --schema=../../prisma/schema.prisma",
+    "prisma": "prisma",
+    "db:push": "prisma db push --schema=../../prisma/schema.prisma",
+    "db:migrate": "prisma migrate deploy --schema=../../prisma/schema.prisma",
+    "db:introspect": "prisma db pull --schema=../../prisma/schema.prisma",
+    "studio": "prisma studio --schema=../../prisma/schema.prisma",
+    "seed": "tsx ../../prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "bcryptjs": "^2.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "prisma": "^5.22.0",
+    "tsx": "^4.7.0"
+  }
+}
